@@ -14,6 +14,9 @@ export default class Proxy {
   }
 
   start(context) {
+    if (context.logger && context.logger.info) {
+      context.logger.info(`Global proxy configured for http://${this.hostname}:${this.port}`);
+    }
     http.request = (options, callback) => {
       this.rewire(options, 'http', 80);
       return originalRequest.call(http, options, callback);
@@ -24,10 +27,6 @@ export default class Proxy {
       }
       return originalHttps.call(https, callback);
     };
-  }
-
-  stop(context) {
-
   }
 
   rewire(options, protocol, defPort) {
