@@ -9,6 +9,8 @@ const originalHttps = https.request;
 export default class Proxy {
   constructor(context, config) {
     this.name = context.service ? context.service.name : os.hostname();
+    this.hostname = config.hostname || 'container-proxy';
+    this.port = config.port || 9990;
   }
 
   start(context) {
@@ -33,8 +35,8 @@ export default class Proxy {
       options.headers = options.headers || {};
       options.headers.host = `${protocol}.${options.host}.${options.port || defPort}`;
       options.headers.source = this.name;
-      options.host = 'container-proxy';
-      options.port = 9990;
+      options.host = this.hostname;
+      options.port = this.port;
       options.protocol = 'http:';
       return true;
     }
