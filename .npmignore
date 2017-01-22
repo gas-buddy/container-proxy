@@ -13,9 +13,8 @@
 # npm-debug.log
 # node_modules
 
-# Custom
-.transpiled
-gbdb.json
+.wercker
+client
 
 # Stock
 *.seed
