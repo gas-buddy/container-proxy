@@ -1,5 +1,4 @@
-import os from 'os';
-import url from 'url';
+import dns from 'dns';
 import http from 'http';
 import https from 'https';
 import containerized from 'containerized';
@@ -17,14 +16,20 @@ function isContainer() {
 
 export default class Proxy {
   constructor(context, config) {
-    this.name = context.service ? context.service.name : os.hostname();
-    this.hostname = config.hostname || 'container-proxy';
+    this.service = context.service;
+    this.hostname = config.hostname;
     this.port = config.port || 9990;
     this.registerIn = (config.registerIn || '').split(',');
     this.proxyIn = (config.proxyIn || '').split(',');
   }
 
-  start(context) {
+  async start(context) {
+    if (!this.hostname) {
+      // See if container-proxy resolves, else assume localhost
+      const resolves =
+        await new Promise(accept => dns.lookup('container-proxy', error => accept(!error)));
+      this.hostname = resolves ? 'container-proxy' : 'localhost';
+    }
     const inDocker = isContainer();
     if (this.registerIn.length === 0 || this.registerIn.includes(inDocker ? 'docker' : 'native')) {
       context.service.on('listening', async (servers) => {
@@ -41,9 +46,9 @@ export default class Proxy {
       const services = [];
       for (const s of servers) {
         if (s instanceof http.Server) {
-          services.push(`http.${this.name}.${s.address().port}`);
+          services.push(`http.${this.service.name}.${s.address().port}`);
         } else if (s instanceof https.Server) {
-          services.push(`https.${this.name}.${s.address().port}`);
+          services.push(`https.${this.service.name}.${s.address().port}`);
         }
       }
       const data = JSON.stringify({ services });
@@ -54,12 +59,12 @@ export default class Proxy {
         method: 'POST',
         headers: {
           Host: 'container-proxy',
+          Source: this.service.name,
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(data),
         },
       }, (res) => {
         res.on('end', () => {
-          console.error('RES END');
           if (context.logger && context.logger.info) {
             context.logger.info('Registered with proxy', { services });
           }
@@ -99,7 +104,7 @@ export default class Proxy {
     if (options.host.match(/[^0-9.]/)) {
       options.headers = options.headers || {};
       options.headers.host = `${protocol}.${options.host}.${options.port || defPort}`;
-      options.headers.source = this.name;
+      options.headers.source = this.service.name;
       options.host = this.hostname;
       options.port = this.port;
       options.protocol = 'http:';

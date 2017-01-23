@@ -5,6 +5,7 @@
   "main": "src/index.js",
   "scripts": {
     "build": "babel src/ -Dd build/",
+    "lint": "eslint .",
     "start": "node build/server.js",
     "start-dev": "node -r babel-register src/server.js",
     "build-docker": "docker build -t gasbuddy/container-proxy .",
