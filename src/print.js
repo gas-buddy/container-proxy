@@ -1,7 +1,7 @@
 import pretty from 'pretty-data';
 import window from 'window-size';
 
-export function center(...args) {
+export function center(char, ...args) {
   let sz = 1; // space before the start of the first
   for (const a of args) {
     if (a) {
@@ -14,7 +14,7 @@ export function center(...args) {
   const w = window.width ? window.width : 120;
   if (sz <= 2) {
     // eslint-disable-next-line no-console
-    console.log(Array(w).join('='));
+    console.log(Array(w).join(char));
     return;
   }
 
@@ -24,8 +24,8 @@ export function center(...args) {
     left = right = '=';
   } else {
     const leftSet = Math.ceil((w - sz) / 2);
-    left = Array(1 + leftSet).join('=');
-    right = Array(1 + (w - leftSet - sz)).join('=');
+    left = Array(1 + leftSet).join(char);
+    right = Array(1 + (w - leftSet - sz)).join(char);
   }
   // eslint-disable-next-line no-console
   console.log(`${left} ${args.join(' ')} ${right}`);

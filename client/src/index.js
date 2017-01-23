@@ -1,7 +1,9 @@
+import os from 'os';
 import dns from 'dns';
 import http from 'http';
 import https from 'https';
 import containerized from 'containerized';
+import portFinder from './portFinder';
 
 const originalRequest = http.request;
 const originalHttps = https.request;
@@ -12,6 +14,18 @@ function isContainer() {
   } catch (e) {
     return false;
   }
+}
+
+function hostIp() {
+  for (const [, ifaces] of Object.entries(os.networkInterfaces())) {
+    for (const iface of ifaces) {
+      // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+      if (iface.family === 'IPv4' && iface.internal === false) {
+        return iface.address;
+      }
+    }
+  }
+  throw new Error('No suitable interface found');
 }
 
 export default class Proxy {
@@ -32,25 +46,44 @@ export default class Proxy {
     }
     const inDocker = isContainer();
     if (!this.registerIn || this.registerIn.includes(inDocker ? 'docker' : 'native')) {
-      context.service.on('listening', async (servers) => {
-        this.registerWithProxy(context, servers);
-      });
+      await this.registerWithProxy(context);
     }
     if (!this.proxyIn || this.proxyIn.includes(inDocker ? 'docker' : 'native')) {
       this.proxyRequests(context);
     }
   }
 
-  registerWithProxy(context, servers) {
+  async registerWithProxy(context) {
     try {
+      // If no port is explicitly set, defaults are used. BUT, this
+      // means you can't run more than one service on the box.
+      // SO, we will muck with the config to assign a random port
+      // (blah, I know).
+      const tlsInfo = this.service.config.get('tls');
+      const httpPort = this.service.config.get('port');
       const services = [];
-      for (const s of servers) {
-        if (s instanceof http.Server) {
-          services.push(`http.${this.service.name}.${s.address().port}`);
-        } else if (s instanceof https.Server) {
-          services.push(`https.${this.service.name}.${s.address().port}`);
+      if (tlsInfo) {
+        if (tlsInfo.port) {
+          services.push(`https.${this.service.name}.${tlsInfo.port}`);
+        } else {
+          const tlsPort = await portFinder(8444);
+          context.logger.info('https server will listen on', tlsPort);
+          this.service.config.set('tls:port', tlsPort);
+          services.push(`https.${this.service.name}.8443-${tlsPort}`);
         }
       }
+      if (!tlsInfo || httpPort === 0 || httpPort) {
+        if (!httpPort) {
+          // If 0 or not set, we need to come up with the port here
+          const finalPort = await portFinder(8001);
+          context.logger.info('http server will listen on', finalPort);
+          this.service.config.set('port', finalPort);
+          services.push(`http.${this.service.name}.8000-${finalPort}`);
+        } else {
+          services.push(`http.${this.service.name}.${httpPort}`);
+        }
+      }
+
       const data = JSON.stringify({ services });
       const regReq = originalRequest.call(http, {
         path: '/register',
@@ -60,34 +93,27 @@ export default class Proxy {
         headers: {
           Host: 'container-proxy',
           Source: this.service.name,
+          HostIp: hostIp(),
           'Content-Type': 'application/json',
           'Content-Length': Buffer.byteLength(data),
         },
       }, (res) => {
         res.on('end', () => {
-          if (context.logger && context.logger.info) {
-            context.logger.info('Registered with proxy', { services });
-          }
+          context.logger.info('Registered with proxy', { services });
         });
         res.on('error', (e) => {
-          if (context.logger && context.logger.error) {
-            context.logger.error('Failed to register with proxy', { error: e });
-          }
+          context.logger.error('Failed to register with proxy', { error: e });
         });
       });
       regReq.write(data);
       regReq.end();
     } catch (failure) {
-      if (context.logger && context.logger.error) {
-        context.logger.error('Failed to register with proxy', { error: failure });
-      }
+      context.logger.error('Failed to register with proxy', { error: failure });
     }
   }
 
   proxyRequests(context) {
-    if (context.logger && context.logger.info) {
-      context.logger.info(`Global proxy configured for http://${this.hostname}:${this.port}`);
-    }
+    context.logger.info(`Global proxy configured for http://${this.hostname}:${this.port}`);
     http.request = (options, callback) => {
       this.rewire(options, 'http', 80);
       return originalRequest.call(http, options, callback);

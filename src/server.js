@@ -5,7 +5,7 @@ import bodyParser from 'body-parser';
 import { center, prettyPrint } from './print';
 
 const SOURCE = Symbol('Request source');
-const protoHostPortPattern = /^(http|https)\.(.*)\.(\d+)$/;
+const protoHostPortPattern = /^(http|https)\.(.*)\.(\d+)(?:-(\d+))?$/;
 
 const app = express();
 app.use(bodyParser.json());
@@ -18,7 +18,7 @@ function mainResolver(host) {
   }
   const match = host.match(protoHostPortPattern);
   if (match) {
-    const final = `${match[1]}://${match[2]}:${match[3]}`;
+    const final = `${match[1]}://${match[2]}:${match[4] || match[3]}`;
     return final;
   }
   return null;
@@ -53,7 +53,7 @@ proxy.proxy.on('proxyReq', (p, req) => {
       if (req.headers.host) {
         const match = req.headers.host.match(protoHostPortPattern);
         if (match) {
-          req.headers.host = `${match[2]}:${match[3]}`;
+          req.headers.host = `${match[2]}:${match[4] || match[3]}`;
         }
       }
     }
@@ -63,7 +63,7 @@ proxy.proxy.on('proxyReq', (p, req) => {
 
     const parts = [];
     if (req.method.toLowerCase() === 'get') {
-      center(req[SOURCE], 'request>>', req.method, fullUrl);
+      center('>', req[SOURCE], 'requests', req.method, fullUrl);
       // eslint-disable-next-line no-console
       console.log(JSON.stringify(req.headers, null, '\t'));
     } else {
@@ -71,10 +71,10 @@ proxy.proxy.on('proxyReq', (p, req) => {
       req.pipe(pt);
       pt.on('data', d => parts.push(d));
       pt.on('end', () => {
-        center(req[SOURCE], 'request>>', req.method, fullUrl);
+        center('>', req[SOURCE], 'requests', req.method, fullUrl);
         // eslint-disable-next-line no-console
         console.log(JSON.stringify(req.headers, null, '\t'));
-        center(req.headers['content-type'] || 'empty');
+        center('>', req.headers['content-type'] || 'empty');
         if (parts.length) {
           prettyPrint(parts, req.headers);
         }
@@ -96,10 +96,9 @@ proxy.proxy.on('proxyRes', (p, req, res) => {
     pt.on('end', () => {
       const targetProto = p.connection.encrypted ? 'https' : 'http';
       const fullUrl = `${targetProto}://${req.headers.host}${req.url}`;
-      center(req[SOURCE], '<response', res.statusCode, req.method, fullUrl);
+      center('<', req[SOURCE], res.statusCode, 'response', req.method, fullUrl);
       // eslint-disable-next-line no-console
       console.log(JSON.stringify(p.headers, null, '\t'));
-      center(p.headers ? p.headers['content-type'] : 'empty');
       if (parts.length) {
         prettyPrint(parts, p.headers);
       }
@@ -113,14 +112,16 @@ proxy.proxy.on('proxyRes', (p, req, res) => {
 app.post('/register', (req, res) => {
   const registered = {};
   for (const hostPattern of req.body.services) {
-    const match = hostPattern.match(/^(http|https)\.(.*)\.(\d+)$/);
+    const match = hostPattern.match(protoHostPortPattern);
     if (!match) {
       // eslint-disable-next-line no-console
       console.error('ERROR - bad service pattern', hostPattern);
     } else {
-      const [, proto, , port] = match;
-      const url = `${proto}://[${req.headers['x-forwarded-for']}]:${port}`;
-      registrations[hostPattern] = registered[hostPattern] = url;
+      const [, proto, host, publicPort, privatePort] = match;
+      const ip = req.headers.hostip || `[${req.headers['x-forwarded-for']}]`;
+      const url = `${proto}://${ip}:${privatePort || publicPort}`;
+      const registerPattern = `${proto}.${host}.${publicPort}`;
+      registrations[registerPattern] = registered[registerPattern] = url;
     }
   }
   // eslint-disable-next-line no-console
