@@ -5,30 +5,31 @@ import bodyParser from 'body-parser';
 import { center, prettyPrint } from './print';
 
 const SOURCE = Symbol('Request source');
+const protoHostPortPattern = /^(http|https)\.(.*)\.(\d+)$/;
 
 const app = express();
 app.use(bodyParser.json());
 
 const registrations = {};
 
-/**
- * Just use DNS if all else fails
- */
-function fallbackResolver(host, url) {
-  const match = host.match(/^(http|https)\.(.*)\.(\d+)$/);
+function mainResolver(host, url) {
+  if (registrations[host]) {
+    return registrations[host];
+  }
+  const match = host.match(protoHostPortPattern);
   if (match) {
     const final = `${match[1]}://${match[2]}:${match[3]}`;
     return final;
   }
 }
 
-fallbackResolver.priority = -1;
+mainResolver.priority = -1;
 
 // Setup the redbird proxy over http
 const proxy = redbird({
   port: process.env.PROXY_PORT || 9990,
   secure: false,
-  resolvers: [fallbackResolver],
+  resolvers: [mainResolver],
 });
 
 // Log proxy requests and clean up the headers
@@ -47,7 +48,7 @@ proxy.proxy.on('proxyReq', (p, req) => {
     // path too, but same diff - a plain client and a plain proxy wouldn't work.
     // So this essentially binds this proxy to our client. Maybe there's a better way...
     if (req.headers.host) {
-      const match = req.headers.host.match(/^(http|https)\.(.*)\.(\d+)$/);
+      const match = req.headers.host.match(protoHostPortPattern);
       if (match) {
         req.headers.host = `${match[2]}:${match[3]}`;
       }
@@ -82,7 +83,7 @@ proxy.proxy.on('proxyRes', (p, req, res) => {
     parts.push(d);
   });
   pt.on('end', () => {
-    center(req[SOURCE], '<response', req.method, req.url);
+    center(req[SOURCE], '<response', res.statusCode, req.method, req.url);
     console.error(JSON.stringify(p.headers, null, '\t'));
     center(p.headers ? p.headers['content-type'] : 'empty');
     if (parts.length) {
@@ -92,9 +93,19 @@ proxy.proxy.on('proxyRes', (p, req, res) => {
 });
 
 app.post('/register', (req, res) => {
-  const url = `${req.body.protocol}://[${req.headers['x-forwarded-for']}]:${req.body.port}`;
-  proxy.register(req.body.host, url);
-  res.json({ url });
+  const registered = {};
+  for (const hostPattern of req.body.services) {
+    const match = hostPattern.match(/^(http|https)\.(.*)\.(\d+)$/);
+    if (!match) {
+      console.error('ERROR - bad service pattern', hostPattern);
+    } else {
+      const [, proto, , port] = match;
+      const url = `${proto}://[${req.headers['x-forwarded-for']}]:${port}`;
+      registrations[hostPattern] = registered[hostPattern] = url;
+    }
+  }
+  console.log('Registered services', JSON.stringify(registered, null, '\t'));
+  res.json(registered);
 });
 
 const server = app.listen(0, () => { });

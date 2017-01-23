@@ -1,10 +1,11 @@
 {
-  "name": "container-proxy-client",
+  "name": "@gasbuddy/container-proxy-client",
   "version": "1.0.0",
   "description": "A node.js proxy with process registration",
   "main": "build/index.js",
   "scripts": {
-    "build": "babel src/ -Dd build/"
+    "build": "babel src/ -Dd build/",
+    "prepublish": "babel src/ -Dd build/"
   },
   "keywords": [
     "proxy",
@@ -15,7 +16,8 @@
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
   "dependencies": {
-    "babel-plugin-transform-object-entries": "^1.0.0"
+    "babel-plugin-transform-object-entries": "^1.0.0",
+    "containerized": "^1.0.2"
   },
   "devDependencies": {
     "babel-cli": "^6.16.0",

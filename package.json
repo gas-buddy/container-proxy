@@ -1,12 +1,14 @@
 {
-  "name": "container-proxy",
+  "name": "@gasbuddy/container-proxy",
   "version": "1.0.0",
   "description": "A reverse proxy that allows dynamic endpoint registration",
   "main": "src/index.js",
   "scripts": {
     "build": "babel src/ -Dd build/",
     "start": "node build/server.js",
-    "start-dev": "node -r babel-register src/server.js"
+    "start-dev": "node -r babel-register src/server.js",
+    "build-docker": "docker build -t gasbuddy/container-proxy .",
+    "publish-docker": "docker push gasbuddy/container-proxy"
   },
   "keywords": [
     "proxy",
