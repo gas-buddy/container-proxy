@@ -12,7 +12,7 @@ export function center(...args) {
   }
 
   const w = window.width ? window.width : 120;
-  if (sz === 1) {
+  if (sz <= 2) {
     // eslint-disable-next-line no-console
     console.log(Array(w).join('='));
     return;

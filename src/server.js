@@ -31,6 +31,7 @@ const proxy = redbird({
   port: process.env.PROXY_PORT || 9990,
   secure: false,
   resolvers: [mainResolver],
+  bunyan: false,
 });
 
 // Log proxy requests and clean up the headers
@@ -57,19 +58,22 @@ proxy.proxy.on('proxyReq', (p, req) => {
       }
     }
 
+    const targetProto = p.connection.encrypted ? 'https' : 'http';
+    const fullUrl = `${targetProto}://${req.headers.host}${req.url}`;
+
     const parts = [];
     if (req.method.toLowerCase() === 'get') {
-      center(req[SOURCE], 'request>>', req.method, req.url);
+      center(req[SOURCE], 'request>>', req.method, fullUrl);
       // eslint-disable-next-line no-console
-      console.error(JSON.stringify(req.headers, null, '\t'));
+      console.log(JSON.stringify(req.headers, null, '\t'));
     } else {
       const pt = new stream.PassThrough();
       req.pipe(pt);
       pt.on('data', d => parts.push(d));
       pt.on('end', () => {
-        center(req[SOURCE], 'request>>', req.method, req.url);
+        center(req[SOURCE], 'request>>', req.method, fullUrl);
         // eslint-disable-next-line no-console
-        console.error(JSON.stringify(req.headers, null, '\t'));
+        console.log(JSON.stringify(req.headers, null, '\t'));
         center(req.headers['content-type'] || 'empty');
         if (parts.length) {
           prettyPrint(parts, req.headers);
@@ -90,9 +94,11 @@ proxy.proxy.on('proxyRes', (p, req, res) => {
     p.pipe(pt);
     pt.on('data', d => parts.push(d));
     pt.on('end', () => {
-      center(req[SOURCE], '<response', res.statusCode, req.method, req.url);
+      const targetProto = p.connection.encrypted ? 'https' : 'http';
+      const fullUrl = `${targetProto}://${req.headers.host}${req.url}`;
+      center(req[SOURCE], '<response', res.statusCode, req.method, fullUrl);
       // eslint-disable-next-line no-console
-      console.error(JSON.stringify(p.headers, null, '\t'));
+      console.log(JSON.stringify(p.headers, null, '\t'));
       center(p.headers ? p.headers['content-type'] : 'empty');
       if (parts.length) {
         prettyPrint(parts, p.headers);

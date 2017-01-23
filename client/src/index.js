@@ -19,8 +19,8 @@ export default class Proxy {
     this.service = context.service;
     this.hostname = config.hostname;
     this.port = config.port || 9990;
-    this.registerIn = (config.registerIn || '').split(',');
-    this.proxyIn = (config.proxyIn || '').split(',');
+    this.registerIn = config.registerIn ? config.registerIn.split(',') : null;
+    this.proxyIn = config.proxyIn ? config.proxyIn.split(',') : null;
   }
 
   async start(context) {
@@ -31,12 +31,12 @@ export default class Proxy {
       this.hostname = resolves ? 'container-proxy' : 'localhost';
     }
     const inDocker = isContainer();
-    if (this.registerIn.length === 0 || this.registerIn.includes(inDocker ? 'docker' : 'native')) {
+    if (!this.registerIn || this.registerIn.includes(inDocker ? 'docker' : 'native')) {
       context.service.on('listening', async (servers) => {
         this.registerWithProxy(context, servers);
       });
     }
-    if (this.proxyIn.length === 0 || this.proxyIn.includes(inDocker ? 'docker' : 'native')) {
+    if (!this.proxyIn || this.proxyIn.includes(inDocker ? 'docker' : 'native')) {
       this.proxyRequests(context);
     }
   }
