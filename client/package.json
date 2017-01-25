@@ -1,6 +1,6 @@
 {
   "name": "@gasbuddy/container-proxy-client",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A node.js proxy with process registration",
   "main": "build/index.js",
   "scripts": {

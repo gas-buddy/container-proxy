@@ -127,6 +127,11 @@ export default class Proxy {
   }
 
   rewire(options, protocol, defPort) {
+    // Seems that some folks do it this way (Dwolla)
+    if (!options.host && options.hostname) {
+      options.host = options.hostname;
+      delete options.hostname;
+    }
     if (options.host.match(/[^0-9.]/)) {
       options.headers = options.headers || {};
       options.headers.host = `${protocol}.${options.host}.${options.port || defPort}`;
