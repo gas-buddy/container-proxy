@@ -43,7 +43,7 @@ export function prettyPrint(bufArr, headers) {
     if (ct.startsWith('application/json') || ct.startsWith('text/json')) {
       // eslint-disable-next-line no-console
       console.log(pretty.pd.json(final));
-    } else if (ct.startsWith('application/xml')) {
+    } else if (ct.startsWith('application/xml') || ct.startsWith('text/xml')) {
       // eslint-disable-next-line no-console
       console.log(pretty.pd.xml(final));
     } else {
