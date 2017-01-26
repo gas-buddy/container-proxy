@@ -12,14 +12,21 @@ app.use(bodyParser.json());
 
 const registrations = {};
 
+function portPart(proto, port) {
+  if ((proto === 'http' && String(port) === '80') ||
+    (proto === 'https' && String(port) === '443')) {
+    return '';
+  }
+  return `:${port}`;
+}
+
 function mainResolver(host) {
   if (registrations[host]) {
     return registrations[host];
   }
   const match = host.match(protoHostPortPattern);
   if (match) {
-    const final = `${match[1]}://${match[2]}:${match[4] || match[3]}`;
-    return final;
+    return `${match[1]}://${match[2]}${portPart(match[1], match[4] || match[3])}`;
   }
   return null;
 }
@@ -31,20 +38,22 @@ const proxy = redbird({
   port: process.env.PROXY_PORT || 9990,
   secure: false,
   resolvers: [mainResolver],
+  xfwd: false,
   bunyan: false,
 });
+
+// Otherwise the outbound host headers get messed up
+proxy.proxy.options.changeOrigin = true;
 
 // Log proxy requests and clean up the headers
 proxy.proxy.on('proxyReq', (p, req) => {
   try {
+    const targetProto = p.connection.encrypted ? 'https' : 'http';
+
     // Source is passed by clients to identify the originating container
     if (req.headers) {
       req[SOURCE] = req.headers.source;
-      delete req.headers.source;
-      delete req.headers['x-forwarded-for'];
-      delete req.headers['x-forwarded-port'];
-      delete req.headers['x-forwarded-proto'];
-      delete req.headers['x-forwarded-host'];
+      p.removeHeader('source');
 
       // We mangle the host because it's the easiest way to transmit port/protocol
       // for the custom resolver, which only gets host and url. Could stick it on the
@@ -53,27 +62,26 @@ proxy.proxy.on('proxyReq', (p, req) => {
       if (req.headers.host) {
         const match = req.headers.host.match(protoHostPortPattern);
         if (match) {
-          req.headers.host = `${match[2]}:${match[4] || match[3]}`;
+          req.headers.host = `${match[2]}${portPart(targetProto, match[4] || match[3])}`;
         }
       }
     }
 
-    const targetProto = p.connection.encrypted ? 'https' : 'http';
     const fullUrl = `${targetProto}://${req.headers.host}${req.url}`;
 
     const parts = [];
     if (req.method.toLowerCase() === 'get') {
       center('>', req[SOURCE], 'requests', req.method, fullUrl);
-      // eslint-disable-next-line no-console
-      console.log(JSON.stringify(req.headers, null, '\t'));
+      // eslint-disable-next-line no-console, no-underscore-dangle
+      console.log(JSON.stringify(p._headers, null, '\t'));
     } else {
       const pt = new stream.PassThrough();
       req.pipe(pt);
       pt.on('data', d => parts.push(d));
       pt.on('end', () => {
         center('>', req[SOURCE], 'requests', req.method, fullUrl);
-        // eslint-disable-next-line no-console
-        console.log(JSON.stringify(req.headers, null, '\t'));
+        // eslint-disable-next-line no-console, no-underscore-dangle
+        console.log(JSON.stringify(p._headers, null, '\t'));
         center('>', req.headers['content-type'] || 'empty');
         if (parts.length) {
           prettyPrint(parts, req.headers);
@@ -116,9 +124,12 @@ app.post('/register', (req, res) => {
     if (!match) {
       // eslint-disable-next-line no-console
       console.error('ERROR - bad service pattern', hostPattern);
+    } else if (!req.headers.hostip) {
+      // eslint-disable-next-line no-console
+      console.error('ERROR - missing HostIp header');
     } else {
       const [, proto, host, publicPort, privatePort] = match;
-      const ip = req.headers.hostip || `[${req.headers['x-forwarded-for']}]`;
+      const ip = req.headers.hostip;
       const url = `${proto}://${ip}:${privatePort || publicPort}`;
       const registerPattern = `${proto}.${host}.${publicPort}`;
       registrations[registerPattern] = registered[registerPattern] = url;
