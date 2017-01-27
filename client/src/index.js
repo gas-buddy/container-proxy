@@ -75,7 +75,7 @@ export default class Proxy {
       if (!tlsInfo || httpPort === 0 || httpPort) {
         if (!httpPort) {
           // If 0 or not set, we need to come up with the port here
-          const finalPort = await portFinder(8001);
+          const finalPort = await portFinder(8002);
           context.logger.info('http server will listen on', finalPort);
           this.service.config.set('port', finalPort);
           services.push(`http.${this.service.name}.8000-${finalPort}`);
