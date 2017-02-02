@@ -122,7 +122,7 @@ export default class Proxy {
       if (this.rewire(options, 'https', 443)) {
         return originalRequest.call(http, options, callback);
       }
-      return originalHttps.call(https, callback);
+      return originalHttps.call(https, options, callback);
     };
   }
 
@@ -131,6 +131,8 @@ export default class Proxy {
     if (!options.host && options.hostname) {
       options.host = options.hostname;
       delete options.hostname;
+    } else if (!options.host && !options.hostname) {
+      return false;
     }
     if (options.host.match(/[^0-9.]/)) {
       options.headers = options.headers || {};

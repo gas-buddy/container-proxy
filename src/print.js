@@ -39,15 +39,19 @@ export function prettyPrint(bufArr, headers) {
       console.log(final);
       return;
     }
-    const ct = headers['content-type'];
-    if (ct.startsWith('application/json') || ct.startsWith('text/json')) {
-      // eslint-disable-next-line no-console
-      console.log(pretty.pd.json(final));
-    } else if (ct.startsWith('application/xml') || ct.startsWith('text/xml')) {
-      // eslint-disable-next-line no-console
-      console.log(pretty.pd.xml(final));
-    } else {
-      // eslint-disable-next-line no-console
+    try {
+      const ct = headers['content-type'];
+      if (ct.startsWith('application/json') || ct.startsWith('text/json')) {
+        // eslint-disable-next-line no-console
+        console.log(pretty.pd.json(final));
+      } else if (ct.startsWith('application/xml') || ct.startsWith('text/xml')) {
+        // eslint-disable-next-line no-console
+        console.log(pretty.pd.xml(final));
+      } else {
+        // eslint-disable-next-line no-console
+        console.log(final);
+      }
+    } catch (error) {
       console.log(final);
     }
   }
