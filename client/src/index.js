@@ -28,11 +28,21 @@ function hostIp() {
   throw new Error('No suitable interface found');
 }
 
+function checkMatch(host, item) {
+  if (item instanceof RegExp) {
+    return item.test(host);
+  } else if (typeof item === 'function') {
+    return item(host);
+  }
+  return item.toString().toLowerCase() === host;
+}
+
 export default class Proxy {
   constructor(context, config) {
     this.service = context.service;
     this.hostname = config.hostname;
     this.port = config.port || 9990;
+    this.doNotProxy = config.doNotProxy || {};
     this.registerIn = config.registerIn ? config.registerIn.split(',') : null;
     this.proxyIn = config.proxyIn ? config.proxyIn.split(',') : null;
   }
@@ -51,6 +61,29 @@ export default class Proxy {
     if (!this.proxyIn || this.proxyIn.includes(inDocker ? 'docker' : 'native')) {
       this.proxyRequests(context);
     }
+  }
+
+  shouldNotProxy(host) {
+    if (!host) {
+      return false;
+    }
+    // Because this is intended to be used with confit, it's generally
+    // a better idea for doNotProxy to be an object. But if you pass us
+    // an array, we can handle it.
+    if (Array.isArray(this.doNotProxy)) {
+      for (const a of this.doNotProxy) {
+        if (checkMatch(host, a)) {
+          return true;
+        }
+      }
+    } else if (this.doNotProxy) {
+      for (const [, pattern] of Object.entries(this.doNotProxy)) {
+        if (checkMatch(host, pattern)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   async registerWithProxy(context) {
@@ -132,6 +165,8 @@ export default class Proxy {
       options.host = options.hostname;
       delete options.hostname;
     } else if (!options.host && !options.hostname) {
+      return false;
+    } else if (this.shouldNotProxy(options.host || options.hostname)) {
       return false;
     }
     if (options.host.match(/[^0-9.]/)) {

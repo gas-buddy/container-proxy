@@ -52,6 +52,7 @@ export function prettyPrint(bufArr, headers) {
         console.log(final);
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.log(final);
     }
   }

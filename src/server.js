@@ -119,25 +119,35 @@ proxy.proxy.on('proxyRes', (p, req, res) => {
 
 app.post('/register', (req, res) => {
   const registered = {};
-  for (const hostPattern of req.body.services) {
-    const match = hostPattern.match(protoHostPortPattern);
-    if (!match) {
-      // eslint-disable-next-line no-console
-      console.error('ERROR - bad service pattern', hostPattern);
-    } else if (!req.headers.hostip) {
-      // eslint-disable-next-line no-console
-      console.error('ERROR - missing HostIp header');
-    } else {
-      const [, proto, host, publicPort, privatePort] = match;
-      const ip = req.headers.hostip;
-      const url = `${proto}://${ip}:${privatePort || publicPort}`;
-      const registerPattern = `${proto}.${host}.${publicPort}`;
-      registrations[registerPattern] = registered[registerPattern] = url;
+  try {
+    for (const hostPattern of req.body.services) {
+      const match = hostPattern.match(protoHostPortPattern);
+      if (!match) {
+        // eslint-disable-next-line no-console
+        console.error('ERROR - bad service pattern', hostPattern);
+      } else if (!req.headers.hostip) {
+        // eslint-disable-next-line no-console
+        console.error('ERROR - missing HostIp header');
+      } else {
+        const [, proto, host, publicPort, privatePort] = match;
+        const ip = req.headers.hostip;
+        const url = `${proto}://${ip}:${privatePort || publicPort}`;
+        const registerPattern = `${proto}.${host}.${publicPort}`;
+        registrations[registerPattern] = registered[registerPattern] = url;
+      }
+    }
+    // eslint-disable-next-line no-console
+    console.log('Registered services', JSON.stringify(registered, null, '\t'));
+    res.json(registered);
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.error('Failed to register service', JSON.stringify(registered, null, '\t'));
+    try {
+      res.sendStatus(500);
+    } catch (ss) {
+      // Nothing to do
     }
   }
-  // eslint-disable-next-line no-console
-  console.log('Registered services', JSON.stringify(registered, null, '\t'));
-  res.json(registered);
 });
 
 const server = app.listen(0, () => { });
