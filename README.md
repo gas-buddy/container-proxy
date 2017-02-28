@@ -1,6 +1,8 @@
 container-proxy
 ===============
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/gas-buddy/container-proxy.svg)](https://greenkeeper.io/)
+
 GasBuddy has a microservice architecture based on Docker, node.js and Swagger. As such, we have a large number of services that talk to each other over
 http/https as well as talk to core services like Postgres, etcd, redis, rabbitmq, etc. For public facing APIs, we use Kong to do authentication
 and client identification. Development in a system like this can be a challenge for a host of reasons:
