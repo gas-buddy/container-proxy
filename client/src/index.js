@@ -17,6 +17,9 @@ function isContainer() {
 }
 
 function hostIp() {
+  if (process.env.CONTAINER_TO_HOST_IP) {
+    return process.env.CONTAINER_TO_HOST_IP;
+  }
   for (const [, ifaces] of Object.entries(os.networkInterfaces())) {
     for (const iface of ifaces) {
       // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses

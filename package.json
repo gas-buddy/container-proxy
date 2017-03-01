@@ -1,6 +1,6 @@
 {
   "name": "@gasbuddy/container-proxy",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A reverse proxy that allows dynamic endpoint registration",
   "main": "src/index.js",
   "scripts": {
