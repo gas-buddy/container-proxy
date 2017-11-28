@@ -1,3 +1,4 @@
+import zlib from 'zlib';
 import pretty from 'pretty-data';
 import window from 'window-size';
 
@@ -11,7 +12,7 @@ export function center(char, ...args) {
     }
   }
 
-  const w = window.width ? window.width : 120;
+  const w = (window && window.width) ? window.width : 120;
   if (sz <= 2) {
     // eslint-disable-next-line no-console
     console.log(Array(w).join(char));
@@ -21,7 +22,8 @@ export function center(char, ...args) {
   let left;
   let right;
   if (sz > w) {
-    left = right = '=';
+    left = '=';
+    right = '=';
   } else {
     const leftSet = Math.ceil((w - sz) / 2);
     left = Array(1 + leftSet).join(char);
@@ -33,7 +35,12 @@ export function center(char, ...args) {
 
 export function prettyPrint(bufArr, headers) {
   if (bufArr) {
-    const final = Buffer.concat(bufArr).toString('utf8');
+    let final = Buffer.concat(bufArr);
+    if (final.length > 2 && (final[0] === 0x1f && final[1] === 0x8b)) {
+      final = zlib.unzipSync(final).toString('utf8');
+    } else {
+      final = final.toString('utf8');
+    }
     if (!headers || !headers['content-type']) {
       // eslint-disable-next-line no-console
       console.log(final);

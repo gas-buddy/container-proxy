@@ -20,13 +20,26 @@ function portPart(proto, port) {
   return `:${port}`;
 }
 
-function mainResolver(host) {
-  if (registrations[host]) {
-    return registrations[host];
+function mainResolver(host, url, req) {
+  if (req.headers['x-envoy-original-path']) {
+    // This request is coming from envoy, which means the service name
+    // is still on the URL, so we need to strip it off, reform the
+    // host header and url
+    const [, api, ...restUrl] = req.url.split('/');
+    req.url = `/${restUrl.join('/')}`;
+    // This means all APIs must be http in dev, which is where
+    // we're going (so that all comms are HTTPS in prod, and no app layer code
+    // cares about it)
+    req.headers.host = `http.${api}-api.8000`;
+    req[SOURCE] = 'ambassador';
+  }
+
+  if (registrations[req.headers.host]) {
+    return registrations[req.headers.host];
   }
   const match = host.match(protoHostPortPattern);
   if (match) {
-    return `${match[1]}://${match[2]}${portPart(match[1], match[4] || match[3])}`;
+    return `${match[1]}://${match[2]}${portPart(match[1], match[4] || match[3])}${req.url}`;
   }
   return null;
 }
@@ -52,7 +65,7 @@ proxy.proxy.on('proxyReq', (p, req) => {
 
     // Source is passed by clients to identify the originating container
     if (req.headers) {
-      req[SOURCE] = req.headers.source;
+      req[SOURCE] = req.headers.source || req[SOURCE];
       p.removeHeader('source');
 
       // We mangle the host because it's the easiest way to transmit port/protocol
@@ -133,7 +146,8 @@ app.post('/register', (req, res) => {
         const ip = req.headers.hostip;
         const url = `${proto}://${ip}:${privatePort || publicPort}`;
         const registerPattern = `${proto}.${host}.${publicPort}`;
-        registrations[registerPattern] = registered[registerPattern] = url;
+        registrations[registerPattern] = url;
+        registered[registerPattern] = url;
       }
     }
     // eslint-disable-next-line no-console
