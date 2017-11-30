@@ -39,7 +39,7 @@ function mainResolver(host, url, req) {
   }
   const match = host.match(protoHostPortPattern);
   if (match) {
-    return `${match[1]}://${match[2]}${portPart(match[1], match[4] || match[3])}${req.url}`;
+    return `${match[1]}://${match[2]}${portPart(match[1], match[4] || match[3])}`;
   }
   return null;
 }
