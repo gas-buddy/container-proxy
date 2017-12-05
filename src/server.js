@@ -1,8 +1,12 @@
 import stream from 'stream';
 import redbird from 'redbird';
+import tls from 'tls';
 import express from 'express';
 import bodyParser from 'body-parser';
 import { center, prettyPrint } from './print';
+
+// Until https://github.com/nodejs/node/issues/16196 rolls into node...
+tls.DEFAULT_ECDH_CURVE = 'auto';
 
 const SOURCE = Symbol('Request source');
 const protoHostPortPattern = /^(http|https)\.(.*)\.(\d+)(?:-(\d+))?$/;
@@ -165,6 +169,5 @@ app.post('/register', (req, res) => {
 });
 
 const server = app.listen(0, () => { });
-
 proxy.register('container-proxy', `http://localhost:${server.address().port}`);
 
