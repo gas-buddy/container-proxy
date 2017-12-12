@@ -2,7 +2,7 @@ import os from 'os';
 import dns from 'dns';
 import http from 'http';
 import https from 'https';
-import containerized from 'containerized';
+import isDocker from 'is-docker';
 import portFinder from './portFinder';
 
 const originalRequest = http.request;
@@ -10,7 +10,7 @@ const originalHttps = https.request;
 
 function isContainer() {
   try {
-    return containerized();
+    return isDocker();
   } catch (e) {
     return false;
   }
