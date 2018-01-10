@@ -25,6 +25,7 @@ function portPart(proto, port) {
 }
 
 function mainResolver(host, url, req) {
+  let finalHost = host;
   if (req.headers['x-envoy-original-path']) {
     // This request is coming from envoy, which means the service name
     // is still on the URL, so we need to strip it off, reform the
@@ -36,12 +37,13 @@ function mainResolver(host, url, req) {
     // cares about it)
     req.headers.host = `http.${api}-api.8000`;
     req[SOURCE] = 'ambassador';
+    finalHost = req.headers.host;
   }
 
   if (registrations[req.headers.host]) {
     return registrations[req.headers.host];
   }
-  const match = host.match(protoHostPortPattern);
+  const match = finalHost.match(protoHostPortPattern);
   if (match) {
     return `${match[1]}://${match[2]}${portPart(match[1], match[4] || match[3])}`;
   }
