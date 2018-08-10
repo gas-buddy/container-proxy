@@ -26,7 +26,7 @@ function portPart(proto, port) {
 
 function mainResolver(host, url, req) {
   let finalHost = host;
-  if (req && req.headers['x-envoy-original-path']) {
+  if (req.headers['x-envoy-original-path']) {
     // This request is coming from envoy, which means the service name
     // is still on the URL, so we need to strip it off, reform the
     // host header and url

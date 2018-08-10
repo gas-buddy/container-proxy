@@ -27,7 +27,7 @@
     "body-parser": "^1.15.2",
     "express": "^4.14.0",
     "pretty-data": "^0.40.0",
-    "redbird": "^0.7.0",
+    "redbird": "github:OptimalBits/redbird#ce7c5fad30a220c1a476a75f92f8423e74380f05",
     "window-size": "^1.1.0",
     "zlib": "^1.0.5"
   },
