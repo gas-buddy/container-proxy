@@ -17,8 +17,8 @@ app.use(bodyParser.json());
 const registrations = {};
 
 function portPart(proto, port) {
-  if ((proto === 'http' && String(port) === '80') ||
-    (proto === 'https' && String(port) === '443')) {
+  if ((proto === 'http' && String(port) === '80')
+    || (proto === 'https' && String(port) === '443')) {
     return '';
   }
   return `:${port}`;
@@ -175,7 +175,7 @@ app.post('/register', (req, res) => {
 
 const server = app.listen(0, () => { });
 if (process.env.INGRESS_DOMAIN) {
+  // eslint-disable-next-line no-console
   console.log(`Forwarding unregistered services to ${process.env.INGRESS_DOMAIN}`);
 }
 proxy.register('container-proxy', `http://localhost:${server.address().port}`);
-

@@ -40,7 +40,8 @@ function hostIp() {
 function checkMatch(host, item) {
   if (item instanceof RegExp) {
     return item.test(host);
-  } else if (typeof item === 'function') {
+  }
+  if (typeof item === 'function') {
     return item(host);
   }
   return item.toString().toLowerCase() === host;
@@ -59,8 +60,8 @@ export default class Proxy {
   async start(context) {
     if (!this.hostname) {
       // See if container-proxy resolves, else assume localhost
-      const resolves =
-        await new Promise(accept => dns.lookup('container-proxy', error => accept(!error)));
+      const resolves = await new Promise(accept => dns
+        .lookup('container-proxy', error => accept(!error)));
       this.hostname = resolves ? 'container-proxy' : 'localhost';
     }
     const inDocker = isContainer();

@@ -1,13 +1,13 @@
 {
   "name": "@gasbuddy/container-proxy",
-  "version": "2.1.0",
+  "version": "3.0.0",
   "description": "A reverse proxy that allows dynamic endpoint registration",
   "main": "src/index.js",
   "scripts": {
     "build": "babel src/ -Dd build/",
     "lint": "eslint .",
     "start": "node build/server.js",
-    "start-dev": "node -r babel-register src/server.js",
+    "start-dev": "node -r @babel/register src/server.js",
     "build-docker": "docker build --squash -t gasbuddy/container-proxy .",
     "publish-docker": "docker push gasbuddy/container-proxy"
   },
@@ -23,20 +23,18 @@
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
   "dependencies": {
-    "babel-plugin-transform-object-entries": "^1.0.0",
-    "body-parser": "^1.15.2",
-    "express": "^4.14.0",
+    "body-parser": "^1.18.3",
+    "express": "^4.16.4",
     "pretty-data": "^0.40.0",
     "redbird": "github:OptimalBits/redbird#ce7c5fad30a220c1a476a75f92f8423e74380f05",
-    "window-size": "^1.1.0",
+    "window-size": "^1.1.1",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
-    "babel-cli": "^6.16.0",
-    "babel-core": "^6.16.0",
-    "babel-preset-gasbuddy": "^3.3.0",
-    "babel-register": "^6.16.3",
-    "cross-env": "^5.1.3",
-    "eslint-config-gasbuddy": "^4.1.0"
+    "@babel/cli": "^7.1.2",
+    "@babel/register": "^7.0.0",
+    "babel-preset-gasbuddy": "^4.1.0",
+    "cross-env": "^5.2.0",
+    "eslint-config-gasbuddy": "^5.0.2"
   }
 }
