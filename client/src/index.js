@@ -181,9 +181,15 @@ export default class Proxy {
     }
     if (options.host.match(/[^0-9.]/)) {
       options.headers = options.headers || {};
-      options.headers.host = `${protocol}.${options.host}.${options.port || defPort}`;
+      options.headers.host = `${protocol}.${options.hostname || options.host}.${options.port || defPort}`;
       options.headers.source = this.service.name;
       options.host = this.hostname;
+      if (options.hostname) {
+        options.hostname = this.hostname;
+      }
+      if (options.href) {
+        options.href = `http://${this.hostname}:${this.port}${options.path}${options.search || ''}`;
+      }
       options.port = this.port;
       options.protocol = 'http:';
       return true;
