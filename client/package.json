@@ -16,13 +16,13 @@
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
   "dependencies": {
-    "is-docker": "^1.1.0"
+    "is-docker": "^2.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.1.2",
-    "@babel/register": "^7.0.0",
-    "babel-preset-gasbuddy": "^4.1.0",
+    "@babel/cli": "^7.4.4",
+    "@babel/register": "^7.4.4",
+    "babel-preset-gasbuddy": "^5.5.0",
     "cross-env": "^5.2.0",
-    "eslint-config-gasbuddy": "^5.0.2"
+    "eslint-config-gasbuddy": "^5.2.1"
   }
 }

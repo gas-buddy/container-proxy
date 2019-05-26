@@ -23,18 +23,18 @@
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.18.3",
-    "express": "^4.16.4",
+    "body-parser": "^1.19.0",
+    "express": "^4.17.0",
     "pretty-data": "^0.40.0",
     "redbird": "github:OptimalBits/redbird#ce7c5fad30a220c1a476a75f92f8423e74380f05",
     "window-size": "^1.1.1",
     "zlib": "^1.0.5"
   },
   "devDependencies": {
-    "@babel/cli": "^7.1.2",
-    "@babel/register": "^7.0.0",
-    "babel-preset-gasbuddy": "^4.1.0",
+    "@babel/cli": "^7.4.4",
+    "@babel/register": "^7.4.4",
+    "babel-preset-gasbuddy": "^5.5.0",
     "cross-env": "^5.2.0",
-    "eslint-config-gasbuddy": "^5.0.2"
+    "eslint-config-gasbuddy": "^5.2.1"
   }
 }
