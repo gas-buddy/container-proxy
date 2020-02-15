@@ -1,4 +1,4 @@
-FROM gasbuddy/node-app:8-production
+FROM gasbuddy/node-app:10-production
 
 WORKDIR /pipeline/source
 

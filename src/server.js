@@ -44,7 +44,7 @@ function mainResolver(host, url, req) {
     return registrations[req.headers.host];
   }
   const match = finalHost.match(protoHostPortPattern);
-  if (process.env.INGRESS_DOMAIN && match[2].indexOf('.') < 0) {
+  if (process.env.INGRESS_DOMAIN && match?.[2]?.indexOf('.') < 0) {
     return `https://${match[2]}.${process.env.INGRESS_DOMAIN}`;
   }
   if (match) {
