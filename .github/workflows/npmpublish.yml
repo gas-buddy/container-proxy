@@ -1,0 +1,36 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - master
+  workflow_call:
+    secrets:
+      npm_token:
+        required: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          registry-url: https://registry.npmjs.org/
+
+      - name: Grant NPM Private Package Access
+        env:
+          NPM_TOKEN: ${{ secrets.npm_token }}
+        run: npm config set '//registry.npmjs.org/:_authToken' "${NPM_TOKEN}"
+
+      - name: Build client
+        run: cd client && npm ci && npm run build
+
+      - name: Publish client package
+        run: npm publish . --tag latest
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.npm_token }}
