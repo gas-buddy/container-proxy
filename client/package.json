@@ -3,7 +3,9 @@
   "version": "2.2.0",
   "description": "A node.js proxy with process registration",
   "main": "build/index.js",
+  "types": "types/index.d.ts",
   "scripts": {
+    "generate:types": "npx -p typescript tsc src/*.js --declaration --allowJs --emitDeclarationOnly --outDir types",
     "build": "babel src/ -Dd build/",
     "prepublish": "babel src/ -Dd build/"
   },
