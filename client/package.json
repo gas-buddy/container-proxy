@@ -6,7 +6,7 @@
   "types": "types/index.d.ts",
   "scripts": {
     "generate:types": "npx -p typescript tsc src/*.js --declaration --allowJs --emitDeclarationOnly --outDir types",
-    "build": "babel src/ -Dd build/",
+    "build": "babel src/ -Dd build/ && npm run generate:types",
     "prepublish": "babel src/ -Dd build/"
   },
   "keywords": [
