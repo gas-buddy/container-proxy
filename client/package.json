@@ -20,6 +20,11 @@
   ],
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gas-buddy/container-proxy.git",
+    "directory": "client"
+  },
   "devDependencies": {
     "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",

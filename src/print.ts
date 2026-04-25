@@ -36,7 +36,7 @@ export function prettyPrint(bufArr: Buffer[], headers?: IncomingHttpHeaders): vo
   if (bufArr) {
     let final: string;
     const raw = Buffer.concat(bufArr);
-    if (raw.length > 2 && (raw[0] === 0x1f && raw[1] === 0x8b)) {
+    if (raw.length > 2 && raw[0] === 0x1f && raw[1] === 0x8b) {
       final = unzipSync(raw).toString('utf8');
     } else {
       final = raw.toString('utf8');

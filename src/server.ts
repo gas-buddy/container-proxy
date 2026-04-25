@@ -27,8 +27,10 @@ export interface AnnotatedRequest extends IncomingMessage {
 export const registrations: Record<string, string> = {};
 
 function portPart(proto: string, port: string | number): string {
-  if ((proto === 'http' && String(port) === '80')
-    || (proto === 'https' && String(port) === '443')) {
+  if (
+    (proto === 'http' && String(port) === '80') ||
+    (proto === 'https' && String(port) === '443')
+  ) {
     return '';
   }
   return `:${port}`;
@@ -136,7 +138,14 @@ proxy.on('proxyRes', (p, req, res) => {
       const targetProto = (p as any).connection?.encrypted ? 'https' : 'http';
       const fullUrl = `${targetProto}://${annotatedReq.headers.host}${annotatedReq.url}`;
       const httpRes = res as ServerResponse;
-      center('<', annotatedReq[SOURCE], httpRes.statusCode, 'response', annotatedReq.method, fullUrl);
+      center(
+        '<',
+        annotatedReq[SOURCE],
+        httpRes.statusCode,
+        'response',
+        annotatedReq.method,
+        fullUrl,
+      );
       // eslint-disable-next-line no-console
       console.log(JSON.stringify(p.headers, null, '\t'));
       if (parts.length) {

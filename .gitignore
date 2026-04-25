@@ -47,3 +47,4 @@ Thumbs.db
 .yarn/cache
 .yarn/install-state.gz
 *.tsbuildinfo
+.eslintcache
