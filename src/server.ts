@@ -20,11 +20,11 @@ const SOURCE = Symbol('Request source');
 const protoHostPortPattern = /^(http|https)\.(.*)\.(\d+)(?:-(\d+))?$/;
 
 // Extend IncomingMessage to carry our SOURCE symbol
-interface AnnotatedRequest extends IncomingMessage {
+export interface AnnotatedRequest extends IncomingMessage {
   [SOURCE]?: string;
 }
 
-const registrations: Record<string, string> = {};
+export const registrations: Record<string, string> = {};
 
 function portPart(proto: string, port: string | number): string {
   if ((proto === 'http' && String(port) === '80')
@@ -34,7 +34,7 @@ function portPart(proto: string, port: string | number): string {
   return `:${port}`;
 }
 
-function mainResolver(
+export function mainResolver(
   host: string | undefined,
   url: string | undefined,
   req: AnnotatedRequest,
@@ -150,7 +150,7 @@ proxy.on('proxyRes', (p, req, res) => {
 });
 
 // Express app handles /register only; used to parse JSON bodies inline
-const app = express();
+export const app = express();
 
 app.post('/register', express.json(), (req: Request, res: Response) => {
   const registered: Record<string, string> = {};
@@ -214,11 +214,13 @@ const server = http.createServer((req: IncomingMessage, res: ServerResponse) => 
 });
 
 const PROXY_PORT = process.env.PROXY_PORT ?? 9990;
-server.listen(PROXY_PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`container-proxy listening on port ${PROXY_PORT}`);
-  if (process.env.INGRESS_DOMAIN) {
+if (process.env.NODE_ENV !== 'test') {
+  server.listen(PROXY_PORT, () => {
     // eslint-disable-next-line no-console
-    console.log(`Forwarding unregistered services to ${process.env.INGRESS_DOMAIN}`);
-  }
-});
+    console.log(`container-proxy listening on port ${PROXY_PORT}`);
+    if (process.env.INGRESS_DOMAIN) {
+      // eslint-disable-next-line no-console
+      console.log(`Forwarding unregistered services to ${process.env.INGRESS_DOMAIN}`);
+    }
+  });
+}

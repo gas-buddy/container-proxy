@@ -16,5 +16,12 @@
     "types": ["node"]
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "build", "__tests__", "__mocks__", "client"]
+  "exclude": ["node_modules", "build", "__tests__", "__mocks__", "client"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS",
+      "moduleResolution": "node",
+      "ignoreDeprecations": "6.0"
+    }
+  }
 }

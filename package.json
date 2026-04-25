@@ -7,6 +7,7 @@
     "build": "tsc -p tsconfig.build.json",
     "lint": "eslint src/",
     "start": "node build/server.js",
+    "test": "jest",
     "build-docker": "docker build -t gasbuddy/container-proxy .",
     "publish-docker": "docker push gasbuddy/container-proxy"
   },
@@ -28,9 +29,15 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/http-proxy": "^1.17.17",
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
+    "@types/supertest": "^7.2.0",
     "eslint": "^8.56.0",
     "eslint-config-gasbuddy": "^7",
+    "jest": "^30.3.0",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
   },
   "packageManager": "yarn@3.6.4"

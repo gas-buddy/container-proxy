@@ -6,7 +6,8 @@
   "types": "build/index.d.ts",
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "lint": "eslint src/"
+    "lint": "eslint src/",
+    "test": "jest"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -20,8 +21,13 @@
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/node": "^25.6.0",
     "eslint-config-gasbuddy": "^7.3.1",
+    "jest": "^30.3.0",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
     "typescript": "^6.0.3"
-  }
+  },
+  "packageManager": "yarn@3.6.4"
 }

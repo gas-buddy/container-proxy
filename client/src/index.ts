@@ -7,7 +7,12 @@ import findPort from './portFinder';
 
 let _isDocker: boolean | undefined;
 
-function isContainer(): boolean {
+/** Reset the cached isContainer result — used by tests only. */
+export function resetIsContainerCache(): void {
+  _isDocker = undefined;
+}
+
+export function isContainer(): boolean {
   if (_isDocker !== undefined) return _isDocker;
   try {
     fs.statSync('/.dockerenv');
