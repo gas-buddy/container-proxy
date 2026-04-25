@@ -3,12 +3,34 @@ import dns from 'dns';
 import http from 'http';
 import https from 'https';
 import isDocker from 'is-docker';
-import portFinder from './portFinder';
+import findPort from './portFinder';
 
-const originalRequest = http.request;
-const originalHttps = https.request;
+const originalRequest = http.request.bind(http) as typeof http.request;
+const originalHttps = https.request.bind(https) as typeof https.request;
 
-function isContainer() {
+export interface ProxyContext {
+  logger: {
+    info(message: string, ...args: unknown[]): void;
+    error(message: string, ...args: unknown[]): void;
+  };
+  service: {
+    name: string;
+    config: {
+      get(key: string): unknown;
+      set(key: string, value: unknown): void;
+    };
+  };
+}
+
+export interface ProxyClientConfig {
+  hostname?: string;
+  port?: number;
+  doNotProxy?: Record<string, unknown> | Array<unknown>;
+  registerIn?: string;
+  proxyIn?: string;
+}
+
+function isContainer(): boolean {
   try {
     return isDocker();
   } catch (e) {
@@ -16,7 +38,7 @@ function isContainer() {
   }
 }
 
-function hostIp() {
+function hostIp(): string {
   if (process.env.CONTAINER_TO_HOST_IP) {
     return process.env.CONTAINER_TO_HOST_IP;
   }
@@ -27,7 +49,7 @@ function hostIp() {
     return 'docker.for.win.localhost';
   }
   for (const [, ifaces] of Object.entries(os.networkInterfaces())) {
-    for (const iface of ifaces) {
+    for (const iface of (ifaces ?? [])) {
       // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
       if (iface.family === 'IPv4' && iface.internal === false) {
         return iface.address;
@@ -37,30 +59,37 @@ function hostIp() {
   throw new Error('No suitable interface found');
 }
 
-function checkMatch(host, item) {
+function checkMatch(host: string, item: unknown): boolean {
   if (item instanceof RegExp) {
     return item.test(host);
   }
   if (typeof item === 'function') {
-    return item(host);
+    return (item as (h: string) => boolean)(host);
   }
-  return item.toString().toLowerCase() === host;
+  return String(item).toLowerCase() === host;
 }
 
 export default class Proxy {
-  constructor(context, config) {
+  private service: ProxyContext['service'];
+  private hostname: string | undefined;
+  private port: number;
+  private doNotProxy: Record<string, unknown> | Array<unknown>;
+  private registerIn: string[] | null;
+  private proxyIn: string[] | null;
+
+  constructor(context: ProxyContext, config: ProxyClientConfig) {
     this.service = context.service;
     this.hostname = config.hostname;
-    this.port = config.port || 9990;
-    this.doNotProxy = config.doNotProxy || {};
+    this.port = config.port ?? 9990;
+    this.doNotProxy = config.doNotProxy ?? {};
     this.registerIn = config.registerIn ? config.registerIn.split(',') : null;
     this.proxyIn = config.proxyIn ? config.proxyIn.split(',') : null;
   }
 
-  async start(context) {
+  async start(context: ProxyContext): Promise<void> {
     if (!this.hostname) {
       // See if container-proxy resolves, else assume localhost
-      const resolves = await new Promise(accept => dns
+      const resolves = await new Promise<boolean>(accept => dns
         .lookup('container-proxy', error => accept(!error)));
       this.hostname = resolves ? 'container-proxy' : 'localhost';
     }
@@ -73,7 +102,7 @@ export default class Proxy {
     }
   }
 
-  shouldNotProxy(host) {
+  shouldNotProxy(host: string): boolean {
     if (!host) {
       return false;
     }
@@ -96,7 +125,7 @@ export default class Proxy {
     return false;
   }
 
-  async registerWithProxy(context) {
+  async registerWithProxy(context: ProxyContext): Promise<void> {
     try {
       // If no port is explicitly set, defaults are used. BUT, this
       // means you can't run more than one service on the box.
@@ -104,12 +133,12 @@ export default class Proxy {
       // (blah, I know).
       const tlsInfo = this.service.config.get('tls');
       const httpPort = this.service.config.get('port');
-      const services = [];
+      const services: string[] = [];
       if (tlsInfo) {
-        if (tlsInfo.port) {
-          services.push(`https.${this.service.name}.${tlsInfo.port}`);
+        if ((tlsInfo as Record<string, unknown>).port) {
+          services.push(`https.${this.service.name}.${(tlsInfo as Record<string, unknown>).port}`);
         } else {
-          const tlsPort = await portFinder(8444);
+          const tlsPort = await findPort(8444);
           context.logger.info('https server will listen on', tlsPort);
           this.service.config.set('tls:port', tlsPort);
           services.push(`https.${this.service.name}.8443-${tlsPort}`);
@@ -118,7 +147,7 @@ export default class Proxy {
       if (!tlsInfo || httpPort === 0 || httpPort) {
         if (!httpPort) {
           // If 0 or not set, we need to come up with the port here
-          const finalPort = await portFinder(8002);
+          const finalPort = await findPort(8002);
           context.logger.info('http server will listen on', finalPort);
           this.service.config.set('port', finalPort);
           services.push(`http.${this.service.name}.8000-${finalPort}`);
@@ -128,7 +157,7 @@ export default class Proxy {
       }
 
       const data = JSON.stringify({ services });
-      const regReq = originalRequest.call(http, {
+      const regReq = originalRequest({
         path: '/register',
         host: this.hostname,
         port: this.port,
@@ -141,10 +170,12 @@ export default class Proxy {
           'Content-Length': Buffer.byteLength(data),
         },
       }, (res) => {
+        // Drain the response stream so 'end' fires and the socket is freed.
+        res.resume();
         res.on('end', () => {
           context.logger.info('Registered with proxy', { services });
         });
-        res.on('error', (e) => {
+        res.on('error', (e: Error) => {
           context.logger.error('Failed to register with proxy', { error: e });
         });
       });
@@ -155,21 +186,29 @@ export default class Proxy {
     }
   }
 
-  proxyRequests(context) {
+  proxyRequests(context: ProxyContext): void {
     context.logger.info(`Global proxy configured for http://${this.hostname}:${this.port}`);
-    http.request = (options, callback) => {
+    // options is typed as `any` because Node's http.request accepts a wide variety
+    // of overloaded call signatures (string | URL | RequestOptions) and callers
+    // may pass additional non-standard fields (e.g. href, search).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    http.request = (options: any, callback?: any) => {
       this.rewire(options, 'http', 80);
-      return originalRequest.call(http, options, callback);
+      return originalRequest(options, callback);
     };
-    https.request = (options, callback) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    https.request = (options: any, callback?: any) => {
       if (this.rewire(options, 'https', 443)) {
-        return originalRequest.call(http, options, callback);
+        return originalRequest(options, callback);
       }
-      return originalHttps.call(https, options, callback);
+      return originalHttps(options, callback);
     };
   }
 
-  rewire(options, protocol, defPort) {
+  // options is typed as `any` because http.request options come in many forms
+  // (string, URL, RequestOptions) and this method mutates them in-place.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  rewire(options: any, protocol: string, defPort: number): boolean {
     // Seems that some folks do it this way (Dwolla)
     if (!options.host && options.hostname) {
       options.host = options.hostname;

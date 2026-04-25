@@ -3,9 +3,10 @@
   "version": "2.2.0",
   "description": "A node.js proxy with process registration",
   "main": "build/index.js",
+  "types": "build/index.d.ts",
   "scripts": {
-    "build": "babel src/ -Dd build/",
-    "prepublish": "babel src/ -Dd build/"
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src/"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -22,10 +23,8 @@
     "is-docker": "^2.0.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.4.4",
-    "@babel/register": "^7.4.4",
-    "babel-preset-gasbuddy": "^5.5.0",
-    "cross-env": "^5.2.0",
-    "eslint-config-gasbuddy": "^5.2.1"
+    "@types/node": "^25.6.0",
+    "eslint-config-gasbuddy": "^7.3.1",
+    "typescript": "^6.0.3"
   }
 }
