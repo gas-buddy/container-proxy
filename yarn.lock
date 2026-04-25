@@ -486,10 +486,18 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@gasbuddy/coconfig@npm:^2.0.0":
+  version: 2.0.0
+  resolution: "@gasbuddy/coconfig@npm:2.0.0"
+  checksum: ecc3949c31890a2a469a08b7457e91f271ac5acf6ad2c7c24a1faf7fd6ffcbd3ef9792c84c97ad3541b59d73c6b000d9cf04320fc73495abe167329249a0d614
+  languageName: node
+  linkType: hard
+
 "@gasbuddy/container-proxy@workspace:.":
   version: 0.0.0-use.local
   resolution: "@gasbuddy/container-proxy@workspace:."
   dependencies:
+    "@gasbuddy/coconfig": ^2.0.0
     "@types/express": ^5.0.6
     "@types/http-proxy": ^1.17.17
     "@types/jest": ^30.0.0

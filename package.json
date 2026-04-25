@@ -10,7 +10,8 @@
     "test": "jest",
     "build-docker": "docker build -t gasbuddy/container-proxy .",
     "publish-docker": "docker push gasbuddy/container-proxy",
-    "prepare": "husky install"
+    "prepare": "husky install",
+    "postinstall": "yarn dlx -p @gasbuddy/coconfig -p coconfig coconfig"
   },
   "engines": {
     "node": ">=18.0.0"
@@ -32,6 +33,7 @@
     "http-proxy": "^1.18.1"
   },
   "devDependencies": {
+    "@gasbuddy/coconfig": "^2.0.0",
     "@types/express": "^5.0.6",
     "@types/http-proxy": "^1.17.17",
     "@types/jest": "^30.0.0",

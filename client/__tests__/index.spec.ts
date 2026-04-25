@@ -237,16 +237,18 @@ describe('findPort()', () => {
   let findPort: (start: number) => Promise<number | null>;
   let mockCreateServer: jest.Mock;
 
-  beforeEach(async () => {
+  beforeEach(() => {
     jest.resetModules();
     // Re-mock net after resetModules
     jest.mock('net', () => {
       const actual = jest.requireActual<typeof import('net')>('net');
       return { ...actual, createServer: jest.fn() };
     });
-    const netModule = await import('net');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
+    const netModule = require('net');
     mockCreateServer = netModule.createServer as jest.Mock;
-    const pfModule = await import('../src/portFinder');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires, global-require
+    const pfModule = require('../src/portFinder');
     findPort = pfModule.default;
   });
 
