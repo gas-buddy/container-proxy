@@ -7,6 +7,9 @@
     "build": "babel src/ -Dd build/",
     "prepublish": "babel src/ -Dd build/"
   },
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "keywords": [
     "proxy",
     "docker",

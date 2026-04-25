@@ -42,3 +42,7 @@ Thumbs.db
 
 ## AI Tools
 .pilot
+
+## Yarn 3
+.yarn/cache
+.yarn/install-state.gz

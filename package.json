@@ -12,7 +12,7 @@
     "publish-docker": "docker push gasbuddy/container-proxy"
   },
   "engines": {
-    "node": ">8.9"
+    "node": ">=18.0.0"
   },
   "keywords": [
     "proxy",
@@ -32,9 +32,12 @@
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.8.4",
     "@babel/register": "^7.8.3",
     "babel-preset-gasbuddy": "^5.6.1",
     "cross-env": "^7.0.0",
-    "eslint-config-gasbuddy": "^5.3.0"
-  }
+    "eslint-config-gasbuddy": "^5.3.0",
+    "node-gyp": "^10.0.0"
+  },
+  "packageManager": "yarn@3.6.4"
 }
