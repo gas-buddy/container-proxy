@@ -89,7 +89,7 @@ export interface RegisterServiceOptions {
   name: string;
   /** Port this service is actually listening on */
   port: number;
-  /** Proxy URL, default 'http://localhost:9990' */
+  /** Proxy URL, default 'http://127.0.0.1:9990' */
   proxyUrl?: string;
   /** Protocol, default 'http' */
   protocol?: 'http' | 'https';
@@ -101,7 +101,7 @@ export async function registerService(options: RegisterServiceOptions): Promise<
   const {
     name,
     port,
-    proxyUrl = 'http://localhost:9990',
+    proxyUrl = 'http://127.0.0.1:9990',
     protocol = 'http',
     publicPort = protocol === 'https' ? 8443 : 8000,
   } = options;
@@ -156,10 +156,11 @@ export default class Proxy {
 
   async start(context: ProxyContext): Promise<void> {
     if (!this.hostname) {
-      // See if container-proxy resolves, else assume localhost
+      // See if container-proxy resolves, else assume 127.0.0.1
+      // (127.0.0.1 instead of localhost for Rancher Desktop compat)
       const resolves = await new Promise<boolean>(accept => dns
         .lookup('container-proxy', error => accept(!error)));
-      this.hostname = resolves ? 'container-proxy' : 'localhost';
+      this.hostname = resolves ? 'container-proxy' : '127.0.0.1';
     }
     const inDocker = isContainer();
     if (!this.registerIn || this.registerIn.includes(inDocker ? 'docker' : 'native')) {

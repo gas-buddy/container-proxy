@@ -8,8 +8,8 @@
     "lint": "eslint src/",
     "start": "node build/server.js",
     "test": "jest",
-    "build-docker": "docker build -t gasbuddy/container-proxy .",
-    "publish-docker": "docker push gasbuddy/container-proxy",
+    "build-docker": "docker build -t ghcr.io/gas-buddy/container-proxy .",
+    "publish-docker": "docker push ghcr.io/gas-buddy/container-proxy",
     "prepare": "husky install",
     "postinstall": "yarn dlx -p @gasbuddy/coconfig -p coconfig coconfig"
   },
