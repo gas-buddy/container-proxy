@@ -69,6 +69,59 @@ function checkMatch(host: string, item: unknown): boolean {
   return String(item).toLowerCase() === host;
 }
 
+export interface RegisterServiceOptions {
+  /** Service name (e.g. 'identity-serv') */
+  name: string;
+  /** Port this service is actually listening on */
+  port: number;
+  /** Proxy URL, default 'http://localhost:9990' */
+  proxyUrl?: string;
+  /** Protocol, default 'http' */
+  protocol?: 'http' | 'https';
+  /** Public port (what other services call), default 8000 for http, 8443 for https */
+  publicPort?: number;
+}
+
+export async function registerService(options: RegisterServiceOptions): Promise<void> {
+  const {
+    name,
+    port,
+    proxyUrl = 'http://localhost:9990',
+    protocol = 'http',
+    publicPort = protocol === 'https' ? 8443 : 8000,
+  } = options;
+
+  const serviceString = port === publicPort
+    ? `${protocol}.${name}.${publicPort}`
+    : `${protocol}.${name}.${publicPort}-${port}`;
+
+  const data = JSON.stringify({ services: [serviceString] });
+  const proxyUrlParsed = new URL(proxyUrl);
+
+  return new Promise<void>((resolve, reject) => {
+    const req = originalRequest({
+      hostname: proxyUrlParsed.hostname,
+      port: proxyUrlParsed.port || 9990,
+      path: '/register',
+      method: 'POST',
+      headers: {
+        Host: 'container-proxy',
+        HostIp: hostIp(),
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(data),
+      },
+    }, (res) => {
+      res.resume(); // Drain response so 'end' fires
+      res.on('end', () => resolve());
+      res.on('error', (err) => reject(err));
+    });
+
+    req.on('error', (err) => reject(err));
+    req.write(data);
+    req.end();
+  });
+}
+
 export default class Proxy {
   private service: ProxyContext['service'];
   private hostname: string | undefined;
