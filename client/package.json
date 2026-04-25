@@ -19,9 +19,6 @@
   ],
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
-  "dependencies": {
-    "is-docker": "^2.0.0"
-  },
   "devDependencies": {
     "@types/node": "^25.6.0",
     "eslint-config-gasbuddy": "^7.3.1",

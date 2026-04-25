@@ -1,9 +1,28 @@
 import os from 'os';
+import fs from 'fs';
 import dns from 'dns';
 import http from 'http';
 import https from 'https';
-import isDocker from 'is-docker';
 import findPort from './portFinder';
+
+let _isDocker: boolean | undefined;
+
+function isContainer(): boolean {
+  if (_isDocker !== undefined) return _isDocker;
+  try {
+    fs.statSync('/.dockerenv');
+    _isDocker = true;
+    return true;
+  } catch {
+    // not definitive, check cgroup
+  }
+  try {
+    _isDocker = fs.readFileSync('/proc/self/cgroup', 'utf8').includes('docker');
+  } catch {
+    _isDocker = false;
+  }
+  return _isDocker;
+}
 
 const originalRequest = http.request.bind(http) as typeof http.request;
 const originalHttps = https.request.bind(https) as typeof https.request;
@@ -30,29 +49,20 @@ export interface ProxyClientConfig {
   proxyIn?: string;
 }
 
-function isContainer(): boolean {
-  try {
-    return isDocker();
-  } catch (e) {
-    return false;
-  }
-}
-
 function hostIp(): string {
   if (process.env.CONTAINER_TO_HOST_IP) {
     return process.env.CONTAINER_TO_HOST_IP;
   }
-  if (os.platform() === 'darwin') {
-    return 'docker.for.mac.localhost';
+  if (os.platform() === 'darwin' || os.platform() === 'win32') {
+    return 'host.docker.internal';
   }
-  if (os.platform() === 'win32') {
-    return 'docker.for.win.localhost';
-  }
+  // Linux: find first non-internal IPv4
   for (const [, ifaces] of Object.entries(os.networkInterfaces())) {
-    for (const iface of (ifaces ?? [])) {
-      // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
-      if (iface.family === 'IPv4' && iface.internal === false) {
-        return iface.address;
+    if (ifaces) {
+      for (const iface of ifaces) {
+        if (iface.family === 'IPv4' && !iface.internal) {
+          return iface.address;
+        }
       }
     }
   }
