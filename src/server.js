@@ -1,18 +1,11 @@
+import http from 'http';
 import stream from 'stream';
-import redbird from 'redbird';
-import tls from 'tls';
+import httpProxy from 'http-proxy';
 import express from 'express';
-import bodyParser from 'body-parser';
 import { center, prettyPrint } from './print';
-
-// Until https://github.com/nodejs/node/issues/16196 rolls into node...
-tls.DEFAULT_ECDH_CURVE = 'auto';
 
 const SOURCE = Symbol('Request source');
 const protoHostPortPattern = /^(http|https)\.(.*)\.(\d+)(?:-(\d+))?$/;
-
-const app = express();
-app.use(bodyParser.json());
 
 const registrations = {};
 
@@ -53,22 +46,10 @@ function mainResolver(host, url, req) {
   return null;
 }
 
-mainResolver.priority = -1;
-
-// Setup the redbird proxy over http
-const proxy = redbird({
-  port: process.env.PROXY_PORT || 9990,
-  secure: false,
-  resolvers: [mainResolver],
-  xfwd: false,
-  bunyan: false,
-});
-
-// Otherwise the outbound host headers get messed up
-proxy.proxy.options.changeOrigin = true;
+const proxy = httpProxy.createProxyServer({ changeOrigin: true });
 
 // Log proxy requests and clean up the headers
-proxy.proxy.on('proxyReq', (p, req) => {
+proxy.on('proxyReq', (p, req) => {
   try {
     const targetProto = p.connection.encrypted ? 'https' : 'http';
 
@@ -94,16 +75,16 @@ proxy.proxy.on('proxyReq', (p, req) => {
     const parts = [];
     if (req.method.toLowerCase() === 'get') {
       center('>', req[SOURCE], 'requests', req.method, fullUrl);
-      // eslint-disable-next-line no-console, no-underscore-dangle
-      console.log(JSON.stringify(p._headers, null, '\t'));
+      // eslint-disable-next-line no-console
+      console.log(JSON.stringify(p.getHeaders(), null, '\t'));
     } else {
       const pt = new stream.PassThrough();
       req.pipe(pt);
       pt.on('data', d => parts.push(d));
       pt.on('end', () => {
         center('>', req[SOURCE], 'requests', req.method, fullUrl);
-        // eslint-disable-next-line no-console, no-underscore-dangle
-        console.log(JSON.stringify(p._headers, null, '\t'));
+        // eslint-disable-next-line no-console
+        console.log(JSON.stringify(p.getHeaders(), null, '\t'));
         center('>', req.headers['content-type'] || 'empty');
         if (parts.length) {
           prettyPrint(parts, req.headers);
@@ -117,7 +98,7 @@ proxy.proxy.on('proxyReq', (p, req) => {
 });
 
 // Log the response
-proxy.proxy.on('proxyRes', (p, req, res) => {
+proxy.on('proxyRes', (p, req, res) => {
   try {
     const parts = [];
     const pt = new stream.PassThrough();
@@ -139,7 +120,10 @@ proxy.proxy.on('proxyRes', (p, req, res) => {
   }
 });
 
-app.post('/register', (req, res) => {
+// Express app handles /register only; used to parse JSON bodies inline
+const app = express();
+
+app.post('/register', express.json(), (req, res) => {
   const registered = {};
   try {
     for (const hostPattern of req.body.services) {
@@ -173,9 +157,39 @@ app.post('/register', (req, res) => {
   }
 });
 
-const server = app.listen(0, () => { });
-if (process.env.INGRESS_DOMAIN) {
+// Single HTTP server: intercepts POST /register, proxies everything else
+const server = http.createServer((req, res) => {
+  // Route /register to the Express app
+  if (req.method === 'POST' && req.url === '/register') {
+    app(req, res);
+    return;
+  }
+
+  const target = mainResolver(req.headers.host, req.url, req);
+  if (!target) {
+    res.writeHead(502, { 'Content-Type': 'text/plain' });
+    res.end('Bad Gateway: no route for ' + req.headers.host);
+    return;
+  }
+
+  proxy.web(req, res, { target }, (err) => {
+    // eslint-disable-next-line no-console
+    console.error('Proxy error', err);
+    try {
+      res.writeHead(502, { 'Content-Type': 'text/plain' });
+      res.end('Bad Gateway');
+    } catch (e) {
+      // Response may already be partially sent
+    }
+  });
+});
+
+const PROXY_PORT = process.env.PROXY_PORT || 9990;
+server.listen(PROXY_PORT, () => {
   // eslint-disable-next-line no-console
-  console.log(`Forwarding unregistered services to ${process.env.INGRESS_DOMAIN}`);
-}
-proxy.register('container-proxy', `http://localhost:${server.address().port}`);
+  console.log(`container-proxy listening on port ${PROXY_PORT}`);
+  if (process.env.INGRESS_DOMAIN) {
+    // eslint-disable-next-line no-console
+    console.log(`Forwarding unregistered services to ${process.env.INGRESS_DOMAIN}`);
+  }
+});

@@ -2,7 +2,7 @@
   "name": "@gasbuddy/container-proxy",
   "version": "3.1.0",
   "description": "A reverse proxy that allows dynamic endpoint registration",
-  "main": "src/index.js",
+  "main": "build/server.js",
   "scripts": {
     "build": "babel src/ -Dd build/",
     "lint": "eslint .",
@@ -23,12 +23,8 @@
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.19.0",
     "express": "^4.17.1",
-    "pretty-data": "^0.40.0",
-    "redbird": "github:OptimalBits/redbird#ce7c5fad30a220c1a476a75f92f8423e74380f05",
-    "window-size": "^1.1.1",
-    "zlib": "^1.0.5"
+    "http-proxy": "^1.18.1"
   },
   "devDependencies": {
     "@babel/cli": "^7.8.4",
