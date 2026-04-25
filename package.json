@@ -4,10 +4,9 @@
   "description": "A reverse proxy that allows dynamic endpoint registration",
   "main": "build/server.js",
   "scripts": {
-    "build": "babel src/ -Dd build/",
-    "lint": "eslint .",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src/",
     "start": "node build/server.js",
-    "start-dev": "node -r @babel/register src/server.js",
     "build-docker": "docker build -t gasbuddy/container-proxy .",
     "publish-docker": "docker push gasbuddy/container-proxy"
   },
@@ -27,13 +26,13 @@
     "http-proxy": "^1.18.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/core": "^7.8.4",
-    "@babel/register": "^7.8.3",
-    "babel-preset-gasbuddy": "^5.6.1",
+    "@types/express": "^5.0.6",
+    "@types/http-proxy": "^1.17.17",
+    "@types/node": "^25.6.0",
     "cross-env": "^7.0.0",
-    "eslint-config-gasbuddy": "^5.3.0",
-    "node-gyp": "^10.0.0"
+    "eslint": "^8.56.0",
+    "eslint-config-gasbuddy": "^7",
+    "typescript": "^6.0.3"
   },
   "packageManager": "yarn@3.6.4"
 }
