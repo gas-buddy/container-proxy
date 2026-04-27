@@ -28,8 +28,8 @@ export const registrations: Record<string, string> = {};
 
 function portPart(proto: string, port: string | number): string {
   if (
-    (proto === 'http' && String(port) === '80') ||
-    (proto === 'https' && String(port) === '443')
+    (proto === 'http' && String(port) === '80')
+    || (proto === 'https' && String(port) === '443')
   ) {
     return '';
   }
