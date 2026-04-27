@@ -9,8 +9,9 @@ config['tsconfig.json'].configuration.exclude = ['node_modules', 'build', 'clien
 config['tsconfig.json'].configuration.compilerOptions.ignoreDeprecations = '6.0';
 // Include jest types for __tests__/ files; base tsconfig only has node
 config['tsconfig.json'].configuration.compilerOptions.types = ['node', 'jest'];
-// rootDir only valid for tsconfig.build.json (src-only); base includes __tests__/ too
-delete config['tsconfig.json'].configuration.compilerOptions.rootDir;
+// rootDir set to "." so both src/ and __tests__/ are included; TS6 requires
+// explicit rootDir when outDir is set. tsconfig.build.json overrides to ./src.
+config['tsconfig.json'].configuration.compilerOptions.rootDir = '.';
 // tsconfig.build.json excludes tests and only compiles src/, so rootDir is safe there
 config['tsconfig.build.json'].configuration.compilerOptions = {
   ...config['tsconfig.build.json'].configuration.compilerOptions,
