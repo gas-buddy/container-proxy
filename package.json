@@ -2,17 +2,19 @@
   "name": "@gasbuddy/container-proxy",
   "version": "3.1.0",
   "description": "A reverse proxy that allows dynamic endpoint registration",
-  "main": "src/index.js",
+  "main": "build/server.js",
   "scripts": {
-    "build": "babel src/ -Dd build/",
-    "lint": "eslint .",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint src/",
     "start": "node build/server.js",
-    "start-dev": "node -r @babel/register src/server.js",
-    "build-docker": "docker build -t gasbuddy/container-proxy .",
-    "publish-docker": "docker push gasbuddy/container-proxy"
+    "test": "jest",
+    "build-docker": "docker build -t ghcr.io/gas-buddy/container-proxy .",
+    "publish-docker": "docker push ghcr.io/gas-buddy/container-proxy",
+    "prepare": "husky install",
+    "postinstall": "yarn dlx -p @gasbuddy/coconfig -p coconfig coconfig"
   },
   "engines": {
-    "node": ">8.9"
+    "node": ">=18.0.0"
   },
   "keywords": [
     "proxy",
@@ -22,19 +24,34 @@
   ],
   "author": "Developers <developers@gasbuddy.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gas-buddy/container-proxy.git"
+  },
   "dependencies": {
-    "body-parser": "^1.19.0",
     "express": "^4.17.1",
-    "pretty-data": "^0.40.0",
-    "redbird": "github:OptimalBits/redbird#ce7c5fad30a220c1a476a75f92f8423e74380f05",
-    "window-size": "^1.1.1",
-    "zlib": "^1.0.5"
+    "http-proxy": "^1.18.1"
   },
   "devDependencies": {
-    "@babel/cli": "^7.8.4",
-    "@babel/register": "^7.8.3",
-    "babel-preset-gasbuddy": "^5.6.1",
-    "cross-env": "^7.0.0",
-    "eslint-config-gasbuddy": "^5.3.0"
+    "@gasbuddy/coconfig": "^2.0.0",
+    "@types/express": "^5.0.6",
+    "@types/http-proxy": "^1.17.17",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^25.6.0",
+    "@types/supertest": "^7.2.0",
+    "eslint": "^8.56.0",
+    "eslint-config-gasbuddy": "^7",
+    "husky": "^9.1.7",
+    "jest": "^30.3.0",
+    "lint-staged": "^15.5.2",
+    "prettier": "^3.8.3",
+    "supertest": "^7.2.2",
+    "ts-jest": "^29.4.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^6.0.3"
+  },
+  "packageManager": "yarn@3.6.4",
+  "lint-staged": {
+    "src/**/*.{ts,tsx}": "eslint --cache --fix"
   }
 }

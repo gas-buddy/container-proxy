@@ -1,0 +1,26 @@
+{
+  "include": ["src/**/*.ts", "__tests__/**/*.ts", "__mocks__/**/*.ts"],
+  "exclude": ["node_modules", "build"],
+  "ts-node": {
+    "transpileOnly": true,
+    "files": true
+  },
+  "compilerOptions": {
+    "lib": ["ES2022"],
+    "module": "Node16",
+    "target": "ES2022",
+    "declaration": true,
+    "sourceMap": true,
+    "outDir": "./build",
+    "rootDir": "./src",
+    "incremental": true,
+    "isolatedModules": true,
+    "strict": true,
+    "moduleResolution": "NodeNext",
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "skipLibCheck": true,
+    "ignoreDeprecations": "6.0",
+    "types": ["node", "jest"]
+  }
+}

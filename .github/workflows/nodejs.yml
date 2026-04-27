@@ -1,0 +1,42 @@
+name: Node.js CI
+
+on:
+  push:
+  workflow_call:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install server deps
+        run: yarn install --immutable
+
+      - name: Build server
+        run: yarn build
+
+      - name: Lint server
+        run: yarn lint
+
+      - name: Test server
+        run: yarn test
+
+      - name: Install client deps
+        run: cd client && yarn install --immutable
+
+      - name: Build client
+        run: cd client && yarn build
+
+      - name: Lint client
+        run: cd client && yarn lint
+
+      - name: Test client
+        run: cd client && yarn test

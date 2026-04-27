@@ -1,9 +1,9 @@
 import net from 'net';
 
 // Inspired by https://github.com/kessler/find-port/blob/master/lib/findPort.js
-async function isAvailable(port) {
+function isAvailable(port: number): Promise<boolean> {
   return new Promise((accept, reject) => {
-    const server = net.createServer().listen(port);
+    const server: net.Server = net.createServer().listen(port);
 
     const timeoutRef = setTimeout(() => {
       accept(false);
@@ -16,7 +16,7 @@ async function isAvailable(port) {
       server.close();
       accept(true);
     });
-    server.once('error', (err) => {
+    server.once('error', (err: NodeJS.ErrnoException) => {
       clearTimeout(timeoutRef);
 
       if (err.code === 'EADDRINUSE') {
@@ -29,7 +29,7 @@ async function isAvailable(port) {
   });
 }
 
-export default async function findPort(start) {
+export default async function findPort(start: number): Promise<number | null> {
   for (let p = start; p < start + 1000; p += 1) {
     // eslint-disable-next-line no-await-in-loop
     if (await isAvailable(p)) {

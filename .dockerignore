@@ -1,1 +1,14 @@
-/client
+node_modules
+build
+client
+.yarn/cache
+.yarn/install-state.gz
+__tests__
+__mocks__
+coverage
+*.tsbuildinfo
+*.log
+.git
+.DS_Store
+.env
+.env.*
